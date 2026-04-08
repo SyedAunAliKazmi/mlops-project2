@@ -1,0 +1,33 @@
+@Library('mlops-shared-lib') _
+
+pipeline {
+    agent any
+
+    environment {
+        MLFLOW_TRACKING_URI = "http://localhost:5000"
+        MODEL_NAME = "iris-classifier"
+    }
+
+    stages {
+        stage('Load Model - Challenger-post-test') {
+            steps {
+                script { mlUtils.loadModel('Challenger-post-test') }
+            }
+        }
+
+        stage('Register Model - Champion') {
+            steps {
+                script { mlUtils.registerModel('Champion') }
+            }
+        }
+
+        stage('Model Deploy - MLflow') {
+            steps {
+                script {
+                    def version = readFile('model_version.txt').trim()
+                    mlUtils.deployModel("models:/${env.MODEL_NAME}/${version}")
+                }
+            }
+        }
+    }
+}
