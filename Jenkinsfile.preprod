@@ -1,0 +1,57 @@
+@Library('mlops-shared-lib') _
+
+pipeline {
+    agent any
+
+    environment {
+        MLFLOW_TRACKING_URI = "http://localhost:5000"
+        MODEL_NAME = "iris-classifier"
+    }
+
+    stages {
+        stage('Load Model - Challenger') {
+            steps {
+                script { mlUtils.loadModel('Challenger') }
+            }
+        }
+
+        stage('Register Model - Challenger-pre-test') {
+            steps {
+                script { mlUtils.registerModel('Challenger-pre-test') }
+            }
+        }
+
+        stage('Model Deploy - MLflow') {
+            steps {
+                script {
+                    def version = readFile('model_version.txt').trim()
+                    mlUtils.deployModel("models:/${env.MODEL_NAME}/${version}")
+                }
+            }
+        }
+
+        stage('Model Test') {
+            steps {
+                script {
+                    def version = readFile('model_version.txt').trim()
+                    mlUtils.testModel("models:/${env.MODEL_NAME}/${version}")
+                }
+            }
+            post {
+                failure {
+                    script {
+                        notifyEmail('Pre-Prod', 'Model Test')
+                    }
+                }
+            }
+        }
+
+        stage('Update Alias - Challenger-post-test') {
+            steps {
+                script {
+                    mlUtils.updateAlias('Challenger-pre-test', 'Challenger-post-test')
+                }
+            }
+        }
+    }
+}
