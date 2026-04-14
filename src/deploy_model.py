@@ -19,18 +19,17 @@ def deploy_model(model_uri, port=6000):
     time.sleep(2)
 
     # 3. Create a clean environment dictionary for the subprocess
+    # This is how your MLflow version gets the Tracking URI
     current_env = os.environ.copy()
     current_env["MLFLOW_TRACKING_URI"] = MLFLOW_URI
 
-    # 4. Start the server with the EXPLICIT --tracking-uri flag
-    # This prevents MLflow from ever trying to look for a local folder
+    # 4. Start the server (WITHOUT the --tracking-uri flag)
     process = subprocess.Popen(
         [
             "mlflow", "models", "serve", 
             "-m", model_uri, 
             "-p", str(port), 
-            "--no-conda",
-            "--tracking-uri", MLFLOW_URI  # <--- The "No More Errors" Flag
+            "--no-conda"
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -38,7 +37,7 @@ def deploy_model(model_uri, port=6000):
     )
 
     print("[DEPLOY] Waiting for server to initialize...")
-    time.sleep(12) # Increased wait time for artifact download
+    time.sleep(12) 
 
     if process.poll() is None:
         print(f"[DEPLOY] SUCCESS: Model is live at http://localhost:{port}")
