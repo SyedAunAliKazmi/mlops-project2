@@ -10,6 +10,9 @@ import signal
 MLFLOW_URI = "http://localhost:5000"
 MODEL_NAME = "iris-classifier"
 
+# CRITICAL FIX: Force the environment variable so the subprocess can see it
+os.environ["MLFLOW_TRACKING_URI"] = MLFLOW_URI
+
 def deploy_model(model_uri, port=6000):
     mlflow.set_tracking_uri(MLFLOW_URI)
     print(f"[DEPLOY] Deploying model from: {model_uri}")
@@ -20,6 +23,7 @@ def deploy_model(model_uri, port=6000):
     time.sleep(2)
 
     # Start MLflow model serving in background
+    # Because we set os.environ above, this command now knows exactly where to find the model
     process = subprocess.Popen(
         ["mlflow", "models", "serve",
          "-m", model_uri,
@@ -44,5 +48,9 @@ def deploy_model(model_uri, port=6000):
         sys.exit(1)
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Error: Please provide a model URI")
+        sys.exit(1)
+        
     model_uri = sys.argv[1]
     deploy_model(model_uri)
