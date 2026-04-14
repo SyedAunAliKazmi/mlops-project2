@@ -2,24 +2,20 @@
 
 pipeline {
     agent any
-
     environment {
         MLFLOW_TRACKING_URI = "http://localhost:5000"
     }
-
     stages {
         stage('Data Ingest') {
             steps {
                 script { mlUtils.ingestData() }
             }
         }
-
         stage('Model Train') {
             steps {
                 script { mlUtils.trainModel() }
             }
         }
-
         stage('Model Deploy - MLflow') {
             steps {
                 script {
@@ -28,7 +24,6 @@ pipeline {
                 }
             }
         }
-
         stage('Model Test') {
             steps {
                 script {
@@ -36,18 +31,22 @@ pipeline {
                     mlUtils.testModel("runs:/${runId}/model")
                 }
             }
-            post {
-                failure {
-                    script {
-                        notifyEmail('Dev', 'Model Test')
-                    }
-                }
-            }
         }
-
         stage('Save Model - Challenger') {
             steps {
                 script { mlUtils.registerModel('Challenger') }
+            }
+        }
+    }
+    post {
+        success {
+            script {
+                notifyEmail('SUCCESS', 'Dev', 'Model Test')
+            }
+        }
+        failure {
+            script {
+                notifyEmail('FAILURE', 'Dev', 'Model Test')
             }
         }
     }
