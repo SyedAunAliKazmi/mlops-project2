@@ -29,6 +29,9 @@ def train_model():
         mlflow.log_param("test_size", 0.2)
         mlflow.log_metric("accuracy", accuracy)
 
+        # CRITICAL FIX: This physically saves the model to MLflow under the name "model"
+        mlflow.sklearn.log_model(model, "model")
+
         print(f"[TRAIN] Accuracy: {accuracy}")
         print(f"[TRAIN] Run ID: {run.info.run_id}")
 
