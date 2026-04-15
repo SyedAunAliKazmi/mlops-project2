@@ -40,6 +40,8 @@ def deploy_model(model_uri, port=6000):
     current_env = os.environ.copy()
     current_env["MLFLOW_TRACKING_URI"] = MLFLOW_URI
 
+    # --- THE FIX IS HERE ---
+    log_file = open("mlflow_serve.log", "w")
     process = subprocess.Popen(
         [
             "mlflow", "models", "serve",
@@ -47,9 +49,10 @@ def deploy_model(model_uri, port=6000):
             "-p", str(port),
             "--no-conda"
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=current_env
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        env=current_env,
+        start_new_session=True # This completely detaches the server from Jenkins
     )
 
     print("[DEPLOY] Waiting for server to initialize...")
@@ -58,8 +61,7 @@ def deploy_model(model_uri, port=6000):
     if process.poll() is None:
         print(f"[DEPLOY] SUCCESS: Model is live at http://localhost:{port}")
     else:
-        stdout, stderr = process.communicate()
-        print(f"[DEPLOY ERROR] Model failed to start:\n{stderr.decode()}")
+        print("[DEPLOY ERROR] Model failed to start. Check mlflow_serve.log for details.")
         sys.exit(1)
 
 if __name__ == "__main__":
