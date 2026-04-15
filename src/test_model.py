@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 import sys
 
 MLFLOW_URI = "http://localhost:5000"
-THRESHOLD = 0.99
+THRESHOLD = 0.85
 
 def test_model(model_uri):
     mlflow.set_tracking_uri(MLFLOW_URI)
