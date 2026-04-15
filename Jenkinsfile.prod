@@ -3,12 +3,24 @@
 pipeline {
     agent any
 
+    // PREVENTS THE @2 WORKSPACE DEADLOCK
+    options {
+        skipDefaultCheckout()
+    }
+
     environment {
         MLFLOW_TRACKING_URI = "http://localhost:5000"
         MODEL_NAME = "iris-classifier"
     }
 
     stages {
+        // MANUALLY CHECKOUT THE CODE TO BYPASS THE BUG
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Load Model - Challenger-post-test') {
             steps {
                 script { mlUtils.loadModel('Challenger-post-test') }
