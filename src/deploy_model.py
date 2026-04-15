@@ -11,11 +11,10 @@ MLFLOW_URI = "http://localhost:5000"
 def deploy_model(model_uri, port=6000):
     os.environ["MLFLOW_TRACKING_URI"] = MLFLOW_URI
     mlflow.set_tracking_uri(MLFLOW_URI)
-    
+
     print(f"[DEPLOY] Target Model URI: {model_uri}")
-    
+
     # --- DIAGNOSTIC CHECK ---
-    # This lists the actual files in the run so we know exactly what was saved
     client = MlflowClient()
     run_id = model_uri.split("/")[1]
     try:
@@ -28,7 +27,7 @@ def deploy_model(model_uri, port=6000):
     os.system(f"fuser -k {port}/tcp 2>/dev/null || true")
     if os.path.exists("./local_model"):
         shutil.rmtree("./local_model")
-    
+
     print("[DEPLOY] Downloading model to local workspace...")
     try:
         # Download strictly into a dedicated folder
@@ -36,7 +35,6 @@ def deploy_model(model_uri, port=6000):
         print(f"[DEPLOY] Model downloaded successfully to: {local_path}")
     except Exception as e:
         print(f"[DEPLOY ERROR] Failed to download: {e}")
-        print("[DEPLOY HINT] If 'model' is not in the Available Artifacts list above, check what name train.py used to save the model!")
         sys.exit(1)
 
     current_env = os.environ.copy()
@@ -44,9 +42,9 @@ def deploy_model(model_uri, port=6000):
 
     process = subprocess.Popen(
         [
-            "mlflow", "models", "serve", 
-            "-m", local_path, 
-            "-p", str(port), 
+            "mlflow", "models", "serve",
+            "-m", local_path,
+            "-p", str(port),
             "--no-conda"
         ],
         stdout=subprocess.PIPE,
@@ -55,7 +53,7 @@ def deploy_model(model_uri, port=6000):
     )
 
     print("[DEPLOY] Waiting for server to initialize...")
-    time.sleep(15) 
+    time.sleep(15)
 
     if process.poll() is None:
         print(f"[DEPLOY] SUCCESS: Model is live at http://localhost:{port}")
